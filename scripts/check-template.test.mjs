@@ -245,26 +245,37 @@ function installCurrentPinnedValidatorManifest(appCodeRoot) {
       "1",
       introduction,
     ]).split(/\s+/);
-    if (introductionAncestry.length > 1) {
-      preManifestCommit = introductionAncestry[1];
+    const firstParent = introductionAncestry[1];
+    const firstParentHasValidator =
+      firstParent !== undefined &&
+      spawnSync("git", ["cat-file", "-e", `${firstParent}:${pinnedValidatorPath}`], {
+        cwd: appCodeRoot,
+      }).status === 0;
+    if (firstParentHasValidator) {
+      preManifestCommit = firstParent;
     } else {
-      // A repository created through GitHub's template mechanism starts a new
-      // root history whose initial tree already contains the manifest. Build
-      // an isolated pre-manifest root for the historical compatibility tests;
-      // never assume that the Organization root commit has a parent.
+      // The manifest arrived with the whole template, not after the validator:
+      // a repository created through GitHub's template mechanism starts a new
+      // root history whose initial tree already contains it, and an
+      // Organization fork that integrated a release with
+      // --allow-unrelated-histories (decision 0174) gets it in a merge whose
+      // first parent is its own older, unrelated history. Either way, build an
+      // isolated pre-manifest root from the introducing tree for the
+      // historical compatibility tests; never assume that the commit that
+      // introduced the manifest has a parent with the validator.
       git(["checkout", "-q", "--detach", introduction]);
       git(["rm", "-q", "--", pinnedValidatorPathManifest]);
-      git([
+      const tree = git(["write-tree"]);
+      preManifestCommit = git([
         "-c",
         "user.name=Mission Control Validator Test",
         "-c",
         "user.email=validator@example.invalid",
-        "commit",
-        "-q",
-        "--amend",
-        "--no-edit",
+        "commit-tree",
+        tree,
+        "-m",
+        "Isolated pre-manifest application root",
       ]);
-      preManifestCommit = git(["rev-parse", "HEAD"]);
     }
   } else {
     preManifestCommit = git(["rev-parse", "HEAD"]);
