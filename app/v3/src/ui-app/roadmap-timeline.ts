@@ -75,6 +75,10 @@ function quarterOf(month: number): number {
 	return Math.floor((month % 12) / 3) + 1;
 }
 
+function quarterLabel(month: number): string {
+	return `Q${quarterOf(month)} ${Math.floor(month / 12)}`;
+}
+
 export function formatRoadmapPeriod(period: RoadmapPeriod, withYear = true): string {
 	const label =
 		period.kind === 'quarter'
@@ -179,6 +183,8 @@ export type RoadmapTimeline = {
 	invalidTimingCount: number;
 	counts: Record<LeaderState, number> & { total: number };
 	next: TimelineRow | null;
+	/** Čtvrtletí dneška; úzké zobrazení u něj ukáže „toto čtvrtletí“. */
+	currentGroupLabel: string;
 };
 
 export function buildRoadmapTimeline(steps: unknown, today: Date = new Date()): RoadmapTimeline {
@@ -201,9 +207,7 @@ export function buildRoadmapTimeline(steps: unknown, today: Date = new Date()): 
 			window,
 			timingLabel: window ? formatTimingWindow(window) : null,
 			confidence: window?.confidence ?? null,
-			groupLabel: window
-				? `Q${quarterOf(window.endMonth)} ${Math.floor(window.endMonth / 12)}`
-				: null,
+			groupLabel: window ? quarterLabel(window.endMonth) : null,
 			offset: 0,
 			span: 0,
 			isNext: false,
@@ -222,8 +226,8 @@ export function buildRoadmapTimeline(steps: unknown, today: Date = new Date()): 
 
 	const columns: TimelineColumn[] = [];
 	let todayOffset: number | null = null;
+	const todayMonth = today.getFullYear() * 12 + today.getMonth();
 	if (scheduled.length > 0) {
-		const todayMonth = today.getFullYear() * 12 + today.getMonth();
 		let start = Math.min(...scheduled.map((row) => row.window?.startMonth ?? 0));
 		let end = Math.max(...scheduled.map((row) => row.window?.endMonth ?? 0));
 		if (
@@ -274,6 +278,7 @@ export function buildRoadmapTimeline(steps: unknown, today: Date = new Date()): 
 		invalidTimingCount,
 		counts,
 		next,
+		currentGroupLabel: quarterLabel(todayMonth),
 	};
 }
 

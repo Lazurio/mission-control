@@ -240,6 +240,7 @@ describe('Main roadmap timeline view model', () => {
 		expect(launch?.offset).toBeCloseTo(200 / 3, 5);
 		expect(launch?.span).toBeCloseTo(100 / 3, 5);
 		expect(timeline.todayOffset).toBeCloseTo(((3 + 30 / 31) / 9) * 100, 5);
+		expect(timeline.currentGroupLabel).toBe('Q4 2026');
 	});
 
 	test('extends the axis to today only when today is near the plan', () => {
