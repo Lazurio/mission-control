@@ -184,7 +184,8 @@ function SelectionNote({
 			</p>
 		);
 	}
-	if (selection.source === 'fallback') {
+	// A single roadmap is not the main one until its owner flags it, so the page says so too.
+	if (selection.source === 'fallback' || selection.source === 'only') {
 		return (
 			<p className='main-roadmap-note'>
 				Organizace zatím nemá označenou hlavní roadmapu, proto zobrazujeme {shownCode}. Hlavní
