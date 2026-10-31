@@ -7,12 +7,14 @@ import type {
 	RoadmapResolutionEvidence,
 	RoadmapStep,
 } from '../../roadmap-model.ts';
+import { roadmapTimingWindow } from '../../roadmap-timing.ts';
 import {
 	api,
 	type RoadmapDraftResponse,
 	type RoadmapStepDraftResponse,
 	type RoadmapsResponse,
 } from '../api.ts';
+import { CONFIDENCE_LABELS, formatTimingWindow } from '../roadmap-timeline.ts';
 
 export function RoadmapsPage({
 	response,
@@ -77,12 +79,26 @@ export function optionalDraftList(value: string): string[] | undefined {
 	return items.length > 0 ? items : undefined;
 }
 
+/** Prázdná pole termín neposílají; neúplný termín odmítne až server s důvodem. */
+export function optionalTimingDraft(
+	from: string,
+	to: string,
+	confidence: string,
+): Record<string, string> | undefined {
+	const timing: Record<string, string> = {};
+	if (from.trim()) timing.from = from.trim();
+	if (to.trim()) timing.to = to.trim();
+	if (confidence.trim()) timing.confidence = confidence.trim();
+	return Object.keys(timing).length > 0 ? timing : undefined;
+}
+
 function RoadmapCreateDraftPanel({ response }: { response: RoadmapsResponse }) {
 	const defaultSourcePlan = response.roadmaps[0]?.roadmap.source_plan ?? '';
 	const [sourcePlan, setSourcePlan] = useState(defaultSourcePlan);
 	const [title, setTitle] = useState('');
 	const [owner, setOwner] = useState('');
 	const [summary, setSummary] = useState('');
+	const [main, setMain] = useState(false);
 	const [busy, setBusy] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 	const [draft, setDraft] = useState<RoadmapDraftResponse | null>(null);
@@ -103,6 +119,7 @@ function RoadmapCreateDraftPanel({ response }: { response: RoadmapsResponse }) {
 				title: title.trim() || undefined,
 				owner: owner.trim() || undefined,
 				summary: summary.trim() || undefined,
+				main: main || undefined,
 			});
 			setDraft(result);
 		} catch (err) {
@@ -169,6 +186,20 @@ function RoadmapCreateDraftPanel({ response }: { response: RoadmapsResponse }) {
 						placeholder='Nech prázdné = target_state/source plan context'
 					/>
 				</div>
+				<label className='field full roadmap-main-toggle' htmlFor='roadmap-create-main'>
+					<span>
+						<input
+							id='roadmap-create-main'
+							type='checkbox'
+							checked={main}
+							onChange={(event) => setMain(event.target.checked)}
+						/>{' '}
+						Hlavní roadmapa Organizace (<code>main: true</code>)
+					</span>
+					<small className='muted'>
+						Hlavní může být jen jedna; u dosavadní hlavní roadmapy příznak odeberte.
+					</small>
+				</label>
 			</div>
 			{error && <p className='error-text'>{error}</p>}
 			{draft && (
@@ -211,6 +242,9 @@ function RoadmapStepDraftPanel({ response }: { response: RoadmapsResponse }) {
 	const [priorityRefs, setPriorityRefs] = useState('priority-002');
 	const [planRefs, setPlanRefs] = useState(defaultPlanRefs);
 	const [acceptanceCriteria, setAcceptanceCriteria] = useState('');
+	const [timingFrom, setTimingFrom] = useState('');
+	const [timingTo, setTimingTo] = useState('');
+	const [timingConfidence, setTimingConfidence] = useState('');
 	const [busy, setBusy] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 	const [draft, setDraft] = useState<RoadmapStepDraftResponse | null>(null);
@@ -237,6 +271,7 @@ function RoadmapStepDraftPanel({ response }: { response: RoadmapsResponse }) {
 				priority_refs: mode === 'create' ? optionalDraftList(priorityRefs) : undefined,
 				plan_refs: optionalDraftList(planRefs),
 				acceptance_criteria: optionalDraftList(acceptanceCriteria),
+				timing: optionalTimingDraft(timingFrom, timingTo, timingConfidence),
 			});
 			setDraft(result);
 		} catch (err) {
@@ -344,6 +379,37 @@ function RoadmapStepDraftPanel({ response }: { response: RoadmapsResponse }) {
 						placeholder='Jeden řádek = jedno kritérium'
 					/>
 				</div>
+				<div className='field'>
+					<label htmlFor='roadmap-draft-timing-from'>Termín od (nepovinné)</label>
+					<input
+						id='roadmap-draft-timing-from'
+						value={timingFrom}
+						onChange={(event) => setTimingFrom(event.target.value)}
+						placeholder='2026-11 nebo 2026-Q4'
+					/>
+				</div>
+				<div className='field'>
+					<label htmlFor='roadmap-draft-timing-to'>Termín do</label>
+					<input
+						id='roadmap-draft-timing-to'
+						value={timingTo}
+						onChange={(event) => setTimingTo(event.target.value)}
+						placeholder='2027-Q1 nebo 2027-02'
+					/>
+				</div>
+				<div className='field'>
+					<label htmlFor='roadmap-draft-timing-confidence'>Jistota termínu</label>
+					<select
+						id='roadmap-draft-timing-confidence'
+						value={timingConfidence}
+						onChange={(event) => setTimingConfidence(event.target.value)}
+					>
+						<option value=''>neuvedeno</option>
+						<option value='committed'>závazné (committed)</option>
+						<option value='likely'>pravděpodobné (likely)</option>
+						<option value='tentative'>orientační (tentative)</option>
+					</select>
+				</div>
 			</div>
 			{error && <p className='error-text'>{error}</p>}
 			{draft && (
@@ -372,6 +438,7 @@ function RoadmapCard({ record }: { record: RoadmapApiRecord }) {
 				<span className='plan-card-title'>{roadmap.title}</span>
 			</div>
 			<div className='plan-card-meta'>
+				{roadmap.main === true ? <span className='main-roadmap-flag'>Hlavní roadmapa</span> : null}
 				<span className={`status-badge ${roadmap.status}`}>{roadmap.status}</span>
 				<span className={`priority-badge ${roadmap.priority}`}>{roadmap.priority}</span>
 				<span>vlastník {roadmap.owner}</span>
@@ -620,6 +687,8 @@ function RoadmapStepCard({
 		: [];
 	const hasHumanBlocker = issueBlockers.length > 0;
 	const hasTechnicalBlocker = step.status === 'blocked' && !hasHumanBlocker;
+	const timing = roadmapTimingWindow(step.timing);
+	const confidence = timing?.confidence ? CONFIDENCE_LABELS[timing.confidence].toLowerCase() : null;
 	return (
 		<article className='roadmap-step-card'>
 			<div className='plan-card-row'>
@@ -629,6 +698,14 @@ function RoadmapStepCard({
 			<div className='plan-card-meta'>
 				<span className={`status-badge ${step.status}`}>{step.status}</span>
 				<span>{step.executable ? 'spustitelný' : 'nespustitelný'}</span>
+				{timing ? (
+					<span>
+						· termín {formatTimingWindow(timing)}
+						{confidence ? ` (${confidence})` : ''}
+					</span>
+				) : step.timing !== undefined ? (
+					<span className='error-text'>· neplatný termín</span>
+				) : null}
 			</div>
 			<ReferenceRow label='priority_refs' values={step.priority_refs} />
 			<ReferenceRow label='plan_refs' values={step.plan_refs} />

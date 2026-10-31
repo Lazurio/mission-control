@@ -1,7 +1,11 @@
 import { describe, expect, test } from 'bun:test';
 import { renderToStaticMarkup } from 'react-dom/server';
 import type { RoadmapsResponse } from '../src/ui-app/api.ts';
-import { optionalDraftList, RoadmapsPage } from '../src/ui-app/pages/Roadmaps.tsx';
+import {
+	optionalDraftList,
+	optionalTimingDraft,
+	RoadmapsPage,
+} from '../src/ui-app/pages/Roadmaps.tsx';
 
 const roadmapFixture: RoadmapsResponse['roadmaps'][number] = {
 	relativePath: 'roadmaps/2026/RM-0002-mission-control-v3.yaml',
@@ -149,6 +153,53 @@ describe('Mission Control Roadmaps UI', () => {
 		expect(optionalDraftList('')).toBeUndefined();
 		expect(optionalDraftList('   \n  ,  ')).toBeUndefined();
 		expect(optionalDraftList('ACME-0022\nACME-0025')).toEqual(['ACME-0022', 'ACME-0025']);
+	});
+
+	test('sends step timing only when a timing field is filled', () => {
+		expect(optionalTimingDraft('', '  ', '')).toBeUndefined();
+		expect(optionalTimingDraft('', '2027-Q1', '')).toEqual({ to: '2027-Q1' });
+		expect(optionalTimingDraft(' 2026-11 ', '2027-Q1', 'likely')).toEqual({
+			from: '2026-11',
+			to: '2027-Q1',
+			confidence: 'likely',
+		});
+		expect(optionalTimingDraft('2026-11', '', '')).toEqual({ from: '2026-11' });
+	});
+
+	test('shows the main roadmap flag, step timing and the timing draft fields', () => {
+		const timedRoadmap = {
+			...roadmapFixture,
+			roadmap: {
+				...roadmapFixture.roadmap,
+				main: true,
+				steps: [
+					{
+						...roadmapFixture.roadmap.steps[0],
+						timing: { from: '2026-11', to: '2027-Q1', confidence: 'likely' },
+					},
+					{
+						...roadmapFixture.roadmap.steps[0],
+						id: 'step-005',
+						timing: { to: 'soon' },
+					},
+				],
+			},
+		} as unknown as RoadmapsResponse['roadmaps'][number];
+
+		const markup = renderToStaticMarkup(
+			<RoadmapsPage
+				response={{ roadmaps: [timedRoadmap], validation: { ok: true, failures: [] } }}
+				loading={false}
+				error={null}
+			/>,
+		);
+
+		expect(markup).toContain('main-roadmap-flag');
+		expect(markup).toContain('termín listopad 2026 – Q1 2027 (pravděpodobné)');
+		expect(markup).toContain('neplatný termín');
+		expect(markup).toContain('Termín do');
+		expect(markup).toContain('Jistota termínu');
+		expect(markup).toContain('Hlavní roadmapa Organizace');
 	});
 
 	test('keeps the first roadmap draft action available in an empty repository', () => {
