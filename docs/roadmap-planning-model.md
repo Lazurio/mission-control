@@ -60,6 +60,15 @@ The first sidebar entry of the app, **Hlavní roadmapa**, shows the main roadmap
 
 The next planned step on the timeline is a reading aid for people. The agent loop's next runnable step on the Roadmaps page keeps its existing rules.
 
+## Adoption in an Organization
+
+An Organization data repository validates with its own copies of `schemas/mission-control-roadmap.schema.json` and `scripts/validate-mission-control-data.mjs`, and the app reads the roadmap schema from the data repository too. Until those copies are updated, `timing` and `main` are rejected as unknown fields, while existing roadmaps keep validating and the timeline lists their steps as unscheduled.
+
+To adopt the fields:
+
+1. Synchronize the Organization's `mission-control` app code with this template.
+2. In one data pull request on `v3`, copy both files from the synchronized app code (`templates/organization-data/`) into the data repository, mark the main roadmap with `main: true` and add `timing` to the steps that leaders should see on the timeline.
+
 ## Repository boundary
 
 `schemas/mission-control-roadmap.schema.json` is the structural model. Organization-aware validation (existence of referenced plans, TODO rows, issue rows, and tracked evidence paths) belongs in the consuming Organization checkout where the concrete data exists.
