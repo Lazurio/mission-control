@@ -263,7 +263,10 @@ function TimelineChart({
 				{timeline.scheduled.map((row, index) => (
 					<li key={row.step.id} className='timeline-item'>
 						{row.groupLabel !== timeline.scheduled[index - 1]?.groupLabel ? (
-							<h3 className='timeline-group-heading'>{row.groupLabel}</h3>
+							<h3 className='timeline-group-heading'>
+								{row.groupLabel}
+								{row.groupLabel === timeline.currentGroupLabel ? ' · toto čtvrtletí' : ''}
+							</h3>
 						) : null}
 						<TimelineStep row={row} plans={plans} onOpenPlan={onOpenPlan} scheduled />
 					</li>

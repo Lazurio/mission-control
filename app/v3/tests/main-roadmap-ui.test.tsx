@@ -150,6 +150,8 @@ describe('Main roadmap page', () => {
 		expect(markup).toContain('<strong>Q4</strong></span>');
 		expect(markup).toContain('<strong>Q1</strong><small>2027</small>');
 		expect(markup).toContain('Dnes');
+		expect(markup).toContain('Q4 2026 · toto čtvrtletí');
+		expect(markup).not.toContain('Q1 2027 · toto čtvrtletí');
 		expect(markup).toContain('--timeline-columns:3');
 		for (const label of ['Plánováno', 'Probíhá', 'Blokováno', 'Hotovo']) {
 			expect(markup).toContain(label);
