@@ -216,6 +216,10 @@ describe('Main roadmap page', () => {
 
 		expect(markup).toContain('Example roadmap RM-0001');
 		expect(markup).not.toContain('main-roadmap-flag');
+		// The only roadmap, unflagged, is shown but never presented as the main one.
+		expect(markup).toContain(
+			'Organizace zatím nemá označenou hlavní roadmapu, proto zobrazujeme RM-0001',
+		);
 		expect(markup).not.toContain('Zobrazit roadmapu');
 		expect(markup).toContain('zatím nemají přibližný termín, proto se časová osa nezobrazuje');
 		expect(markup).toContain('Keep generic fixture readable');
