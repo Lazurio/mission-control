@@ -595,7 +595,8 @@ describe('Mission Control roadmap validator parity', () => {
 
 			const broken = structuredClone(fixture);
 			broken.steps[0].timing = { to: '2026-13' };
-			broken.steps[1].timing = { from: '2026-Q3', to: '2026-05', confidence: 'sure' };
+			// Starts before `to` but ends after it: only the full window rule rejects it.
+			broken.steps[1].timing = { from: '2026-Q4', to: '2026-11', confidence: 'sure' };
 			writeFileSync(roadmapPath, stringifyYaml(broken));
 			const second = structuredClone(fixture);
 			second.id = 'mcroadmap-rm-0002';

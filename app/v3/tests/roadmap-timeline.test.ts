@@ -216,6 +216,29 @@ describe('Main roadmap timeline view model', () => {
 		]);
 	});
 
+	test('a long step that starts early comes after a short step that lands earlier', () => {
+		const timeline = buildRoadmapTimeline(
+			[
+				step({
+					id: 'step-001',
+					title: 'Long migration',
+					timing: { from: '2026-07', to: '2027-Q2' },
+				}),
+				step({ id: 'step-002', title: 'Quick fix', timing: { to: '2026-Q4' } }),
+				step({ id: 'step-003', title: 'Later start', timing: { from: '2026-12', to: '2027-Q2' } }),
+				step({ id: 'step-004', title: 'Same window', timing: { from: '2026-12', to: '2027-Q2' } }),
+			],
+			TODAY,
+		);
+
+		expect(timeline.scheduled.map((row) => row.step.id)).toEqual([
+			'step-002',
+			'step-001',
+			'step-003',
+			'step-004',
+		]);
+	});
+
 	test('marks the first planned step in time order as next', () => {
 		const timeline = buildRoadmapTimeline(launchSteps, TODAY);
 
