@@ -1,6 +1,6 @@
 # Changelog
 
-## 3.1.0 — unreleased
+## 3.1.0 — 2026-11-01
 
 Main roadmap and approximate step timing, plus cheaper continuous
 integration. The roadmap schema changes, so an Organization adopts this
