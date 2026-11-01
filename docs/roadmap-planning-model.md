@@ -66,7 +66,7 @@ An Organization data repository validates with its own copies of `schemas/missio
 
 To adopt the fields:
 
-1. Synchronize the Organization's `mission-control` app code with this template.
+1. Integrate the first `Lazurio/mission-control` release that carries the fields (see `CHANGELOG.md`) into the Organization's `mission-control` app code, as "Downstream synchronization" in `README.md` describes.
 2. In one data pull request on `v3`, copy both files from the synchronized app code (`templates/organization-data/`) into the data repository, mark the main roadmap with `main: true` and add `timing` to the steps that leaders should see on the timeline.
 
 App and data have to move together. Once a client runs the updated app, it rejects an inbound update whose roadmap schema is still the old one. A client still on the old app cannot import data that already uses the new schema. Update every app client of the Organization (each checkout of its Mission Control that people or its automated Environments run) and publish the data pull request in one announced, short window. Until both sides match, the clients concerned refuse those updates.
