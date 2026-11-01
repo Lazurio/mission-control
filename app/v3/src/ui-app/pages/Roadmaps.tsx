@@ -7,7 +7,7 @@ import type {
 	RoadmapResolutionEvidence,
 	RoadmapStep,
 } from '../../roadmap-model.ts';
-import { roadmapTimingWindow } from '../../roadmap-timing.ts';
+import { type RoadmapStepTiming, roadmapTimingWindow } from '../../roadmap-timing.ts';
 import {
 	api,
 	type RoadmapDraftResponse,
@@ -90,6 +90,57 @@ export function optionalTimingDraft(
 	if (to.trim()) timing.to = to.trim();
 	if (confidence.trim()) timing.confidence = confidence.trim();
 	return Object.keys(timing).length > 0 ? timing : undefined;
+}
+
+export type StepDraftForm = {
+	planRefs: string;
+	timingFrom: string;
+	timingTo: string;
+	timingConfidence: string;
+};
+
+/** Výchozí hodnoty formuláře pro vybraný krok: jeho vlastní plan_refs a termín, nikdy jiného kroku. */
+export function stepDraftDefaults(step: RoadmapStep | undefined): StepDraftForm {
+	const timing: Partial<RoadmapStepTiming> =
+		step?.timing && typeof step.timing === 'object' ? step.timing : {};
+	return {
+		planRefs: Array.isArray(step?.plan_refs) ? step.plan_refs.join('\n') : '',
+		timingFrom: typeof timing.from === 'string' ? timing.from : '',
+		timingTo: typeof timing.to === 'string' ? timing.to : '',
+		timingConfidence: typeof timing.confidence === 'string' ? timing.confidence : '',
+	};
+}
+
+function sameList(left: string[], right: unknown): boolean {
+	return (
+		Array.isArray(right) &&
+		left.length === right.length &&
+		left.every((item, i) => item === right[i])
+	);
+}
+
+function sameTiming(left: Record<string, string>, right: unknown): boolean {
+	const other = right && typeof right === 'object' ? (right as Record<string, unknown>) : {};
+	return ['from', 'to', 'confidence'].every((key) => left[key] === other[key]);
+}
+
+/**
+ * plan_refs a termín, které draft kroku pošle. Nový krok dostane, co je vyplněné. Úprava
+ * existujícího kroku pošle seznam nebo termín jen tehdy, když se liší od vybraného kroku, aby
+ * změna jednoho pole nepřepsala jeho ostatní hodnoty.
+ */
+export function stepDraftChanges(
+	mode: 'update' | 'create',
+	step: RoadmapStep | undefined,
+	form: StepDraftForm,
+): { plan_refs?: string[]; timing?: Record<string, string> } {
+	const planRefs = optionalDraftList(form.planRefs);
+	const timing = optionalTimingDraft(form.timingFrom, form.timingTo, form.timingConfidence);
+	if (mode === 'create') return { plan_refs: planRefs, timing };
+	return {
+		plan_refs: planRefs && !sameList(planRefs, step?.plan_refs) ? planRefs : undefined,
+		timing: timing && !sameTiming(timing, step?.timing) ? timing : undefined,
+	};
 }
 
 function RoadmapCreateDraftPanel({ response }: { response: RoadmapsResponse }) {
@@ -225,7 +276,6 @@ function RoadmapStepDraftPanel({ response }: { response: RoadmapsResponse }) {
 		[response.roadmaps],
 	);
 	const [roadmapCode, setRoadmapCode] = useState(selectableRoadmaps[0]?.roadmap.roadmap_code ?? '');
-	const [mode, setMode] = useState<'update' | 'create'>('update');
 	const selectedRecord = useMemo(
 		() =>
 			selectableRoadmaps.find((record) => record.roadmap.roadmap_code === roadmapCode) ??
@@ -236,25 +286,39 @@ function RoadmapStepDraftPanel({ response }: { response: RoadmapsResponse }) {
 		? selectedRecord.roadmap.steps.filter(isRoadmapStep)
 		: [];
 	const defaultStepId = selectedRecord?.next_step?.id ?? steps[0]?.id ?? '';
-	const defaultPlanRefs = selectedRecord?.next_step?.plan_refs?.join('\n') ?? 'DEV-0001';
+	const defaultPriorityRefs = selectedRecord?.roadmap.priorities?.[0]?.id ?? '';
 	const [stepId, setStepId] = useState(defaultStepId);
+	const [mode, setMode] = useState<'update' | 'create'>('update');
+	const selectedStep = steps.find((step) => step.id === (stepId || defaultStepId));
+	const initial = stepDraftDefaults(selectedStep);
 	const [title, setTitle] = useState('');
-	const [priorityRefs, setPriorityRefs] = useState('priority-002');
-	const [planRefs, setPlanRefs] = useState(defaultPlanRefs);
+	const [priorityRefs, setPriorityRefs] = useState(defaultPriorityRefs);
+	const [planRefs, setPlanRefs] = useState(initial.planRefs);
 	const [acceptanceCriteria, setAcceptanceCriteria] = useState('');
-	const [timingFrom, setTimingFrom] = useState('');
-	const [timingTo, setTimingTo] = useState('');
-	const [timingConfidence, setTimingConfidence] = useState('');
+	const [timingFrom, setTimingFrom] = useState(initial.timingFrom);
+	const [timingTo, setTimingTo] = useState(initial.timingTo);
+	const [timingConfidence, setTimingConfidence] = useState(initial.timingConfidence);
 	const [busy, setBusy] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 	const [draft, setDraft] = useState<RoadmapStepDraftResponse | null>(null);
 
 	useEffect(() => {
 		setStepId(defaultStepId);
-		setPlanRefs(defaultPlanRefs);
+		setPriorityRefs(defaultPriorityRefs);
+	}, [defaultStepId, defaultPriorityRefs]);
+
+	// The form edits the selected step: switching roadmap, step or mode reloads its own values.
+	const selectedStepKey = `${selectedRecord?.roadmap.roadmap_code ?? ''}/${mode}/${selectedStep?.id ?? ''}`;
+	// biome-ignore lint/correctness/useExhaustiveDependencies: keyed by the selected step, which the key names
+	useEffect(() => {
+		const values = stepDraftDefaults(mode === 'update' ? selectedStep : undefined);
+		setPlanRefs(values.planRefs);
+		setTimingFrom(values.timingFrom);
+		setTimingTo(values.timingTo);
+		setTimingConfidence(values.timingConfidence);
 		setDraft(null);
 		setError(null);
-	}, [defaultStepId, defaultPlanRefs]);
+	}, [selectedStepKey]);
 
 	async function handleDraft() {
 		const targetRoadmapCode = selectedRecord?.roadmap.roadmap_code;
@@ -269,9 +333,13 @@ function RoadmapStepDraftPanel({ response }: { response: RoadmapsResponse }) {
 				step_id: mode === 'update' ? stepId || defaultStepId : undefined,
 				title: title.trim() || undefined,
 				priority_refs: mode === 'create' ? optionalDraftList(priorityRefs) : undefined,
-				plan_refs: optionalDraftList(planRefs),
+				...stepDraftChanges(mode, selectedStep, {
+					planRefs,
+					timingFrom,
+					timingTo,
+					timingConfidence,
+				}),
 				acceptance_criteria: optionalDraftList(acceptanceCriteria),
-				timing: optionalTimingDraft(timingFrom, timingTo, timingConfidence),
 			});
 			setDraft(result);
 		} catch (err) {
@@ -367,7 +435,7 @@ function RoadmapStepDraftPanel({ response }: { response: RoadmapsResponse }) {
 						id='roadmap-draft-plan-refs'
 						value={planRefs}
 						onChange={(event) => setPlanRefs(event.target.value)}
-						placeholder='DEV-0001'
+						placeholder='Kód plánu, jeden na řádek'
 					/>
 				</div>
 				<div className='field'>

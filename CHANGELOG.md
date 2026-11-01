@@ -30,6 +30,12 @@ release in one short window for its app and its data repository (see
   main roadmap.
 - Creating a step draft no longer writes empty ref arrays that the schema
   rejects.
+- The step draft on the Roadmaps page edits the selected step. It loads that
+  step's own `plan_refs` and timing, and an update sends them only when they
+  changed. Before, it always sent the next step's `plan_refs`, so changing only
+  another step's timing silently replaced that step's plan references. The
+  stand-in values for plan and priority refs are gone; a new step defaults to
+  the roadmap's first priority.
 - The plan list page is titled **Plány** instead of **Roadmapa**, so only one
   page is called a roadmap.
 - The template guard (`scripts/check-template.mjs`) checks the shape of the
