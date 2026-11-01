@@ -6,8 +6,10 @@ import {
 	optionalDraftList,
 	optionalTimingDraft,
 	RoadmapsPage,
+	selectedStepId,
 	stepDraftChanges,
 	stepDraftDefaults,
+	stepDraftPayload,
 } from '../src/ui-app/pages/Roadmaps.tsx';
 
 const roadmapFixture: RoadmapsResponse['roadmaps'][number] = {
@@ -219,6 +221,62 @@ describe('Mission Control Roadmaps UI', () => {
 			plan_refs: undefined,
 			timing: { to: '2027-Q1', confidence: 'likely' },
 		});
+	});
+
+	test('emptying a prefilled field removes it from the step', () => {
+		const step: RoadmapStep = {
+			id: 'step-003',
+			title: 'Step with references',
+			status: 'ready',
+			executable: false,
+			plan_refs: ['ACME-0010'],
+			timing: { to: '2026-Q4' },
+		};
+		const emptied = { planRefs: '', timingFrom: '', timingTo: '', timingConfidence: '' };
+		expect(stepDraftChanges('update', step, emptied)).toEqual({ plan_refs: null, timing: null });
+		// A step without them has nothing to remove.
+		const bare: RoadmapStep = {
+			id: 'step-004',
+			title: 'Bare step',
+			status: 'shaping',
+			executable: false,
+		};
+		expect(stepDraftChanges('update', bare, emptied)).toEqual({
+			plan_refs: undefined,
+			timing: undefined,
+		});
+	});
+
+	test('the form never edits a step id chosen on another roadmap', () => {
+		// Roadmap B has the same default step as A but no step-007, which was chosen on A.
+		const roadmapB: RoadmapStep[] = [
+			{
+				id: 'step-001',
+				title: 'First',
+				status: 'ready',
+				executable: false,
+				plan_refs: ['ACME-0010'],
+				timing: { to: '2026-Q4' },
+			},
+			{ id: 'step-002', title: 'Second', status: 'shaping', executable: false },
+		];
+		expect(selectedStepId(roadmapB, 'step-007', 'step-001')).toBe('step-001');
+		expect(selectedStepId(roadmapB, 'step-002', 'step-001')).toBe('step-002');
+		expect(selectedStepId([], 'step-007', '')).toBe('');
+		// The request goes to roadmap B's step with that step's own values, not to step-007.
+		const payload = stepDraftPayload({
+			mode: 'update',
+			steps: roadmapB,
+			stepId: 'step-007',
+			defaultStepId: 'step-001',
+			title: '',
+			priorityRefs: '',
+			acceptanceCriteria: '',
+			form: { ...stepDraftDefaults(roadmapB[0]), timingTo: '2027-Q1' },
+		});
+		expect(payload.step_id).toBe('step-001');
+		expect(payload.plan_refs).toBeUndefined();
+		expect(payload.timing).toEqual({ to: '2027-Q1' });
 	});
 
 	test('a new step sends the plan_refs and timing that are filled in', () => {

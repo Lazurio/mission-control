@@ -251,6 +251,11 @@ function updateExistingStep(
 		'issue_refs',
 		'acceptance_criteria',
 	] as const) {
+		// `null` odebere seznam odkazů; prázdné pole schéma nedovolí.
+		if (payload[field] === null && field !== 'acceptance_criteria') {
+			delete step[field];
+			continue;
+		}
 		const list = optionalStringArray(payload[field], field);
 		if (list !== undefined) step[field] = list;
 	}
