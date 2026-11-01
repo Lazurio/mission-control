@@ -35,7 +35,11 @@ release in one short window for its app and its data repository (see
   changed. Before, it always sent the next step's `plan_refs`, so changing only
   another step's timing silently replaced that step's plan references. The
   stand-in values for plan and priority refs are gone; a new step defaults to
-  the roadmap's first priority.
+  the roadmap's first priority. Emptying a prefilled `plan_refs` or timing
+  removes it: the draft API now accepts `null` for reference lists, as it
+  already did for timing, and still rejects an empty list. The form never edits
+  a step of another roadmap: the edited step is derived from the selected
+  roadmap, and one function builds the whole request.
 - The plan list page is titled **Plány** instead of **Roadmapa**, so only one
   page is called a roadmap.
 - The template guard (`scripts/check-template.mjs`) checks the shape of the

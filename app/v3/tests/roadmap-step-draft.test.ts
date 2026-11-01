@@ -60,6 +60,20 @@ describe('Mission Control Roadmap Step timing drafts', () => {
 		expect(cleared.validation.ok).toBe(true);
 	});
 
+	test('removes a reference list with null; an empty list stays an error', async () => {
+		const draft = await buildRoadmapStepDraft('RM-0001', {
+			dry_run: true,
+			mode: 'update',
+			step_id: 'step-002',
+			plan_refs: null,
+		});
+		expect(draft.step.plan_refs).toBeUndefined();
+		expect(parseYaml(draft.yaml).steps[1].plan_refs).toBeUndefined();
+		expect(
+			(await draftError({ mode: 'update', step_id: 'step-002', plan_refs: [] })).message,
+		).toContain('plan_refs nesmí být prázdné pole');
+	});
+
 	test('rejects malformed timing before drafting', async () => {
 		for (const [timing, message] of [
 			['Q1', 'timing musí být objekt'],

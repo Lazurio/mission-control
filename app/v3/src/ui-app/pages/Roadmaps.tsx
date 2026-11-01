@@ -133,13 +133,59 @@ export function stepDraftChanges(
 	mode: 'update' | 'create',
 	step: RoadmapStep | undefined,
 	form: StepDraftForm,
-): { plan_refs?: string[]; timing?: Record<string, string> } {
+): { plan_refs?: string[] | null; timing?: Record<string, string> | null } {
 	const planRefs = optionalDraftList(form.planRefs);
 	const timing = optionalTimingDraft(form.timingFrom, form.timingTo, form.timingConfidence);
 	if (mode === 'create') return { plan_refs: planRefs, timing };
+	// A field the person emptied removes the step's own value (`null`).
+	const hadRefs = Array.isArray(step?.plan_refs) && step.plan_refs.length > 0;
+	const hadTiming = step?.timing !== undefined && step?.timing !== null;
 	return {
-		plan_refs: planRefs && !sameList(planRefs, step?.plan_refs) ? planRefs : undefined,
-		timing: timing && !sameTiming(timing, step?.timing) ? timing : undefined,
+		plan_refs: planRefs
+			? sameList(planRefs, step?.plan_refs)
+				? undefined
+				: planRefs
+			: hadRefs
+				? null
+				: undefined,
+		timing: timing
+			? sameTiming(timing, step?.timing)
+				? undefined
+				: timing
+			: hadTiming
+				? null
+				: undefined,
+	};
+}
+
+/** The step the form edits: the chosen one while it is in the selected roadmap, else the roadmap's default. */
+export function selectedStepId(steps: RoadmapStep[], chosen: string, fallback: string): string {
+	return steps.some((step) => step.id === chosen) ? chosen : fallback;
+}
+
+export type StepDraftInput = {
+	mode: 'update' | 'create';
+	steps: RoadmapStep[];
+	stepId: string;
+	defaultStepId: string;
+	title: string;
+	priorityRefs: string;
+	acceptanceCriteria: string;
+	form: StepDraftForm;
+};
+
+/** The dry-run request for the step draft API, built from the form as it is now. */
+export function stepDraftPayload(input: StepDraftInput): Record<string, unknown> {
+	const stepId = selectedStepId(input.steps, input.stepId, input.defaultStepId);
+	const step = input.steps.find((item) => item.id === stepId);
+	return {
+		dry_run: true,
+		mode: input.mode,
+		step_id: input.mode === 'update' ? stepId : undefined,
+		title: input.title.trim() || undefined,
+		priority_refs: input.mode === 'create' ? optionalDraftList(input.priorityRefs) : undefined,
+		...stepDraftChanges(input.mode, step, input.form),
+		acceptance_criteria: optionalDraftList(input.acceptanceCriteria),
 	};
 }
 
@@ -289,7 +335,9 @@ function RoadmapStepDraftPanel({ response }: { response: RoadmapsResponse }) {
 	const defaultPriorityRefs = selectedRecord?.roadmap.priorities?.[0]?.id ?? '';
 	const [stepId, setStepId] = useState(defaultStepId);
 	const [mode, setMode] = useState<'update' | 'create'>('update');
-	const selectedStep = steps.find((step) => step.id === (stepId || defaultStepId));
+	// Derived on every render, so a step id chosen on another roadmap is never shown or sent.
+	const effectiveStepId = selectedStepId(steps, stepId, defaultStepId);
+	const selectedStep = steps.find((step) => step.id === effectiveStepId);
 	const initial = stepDraftDefaults(selectedStep);
 	const [title, setTitle] = useState('');
 	const [priorityRefs, setPriorityRefs] = useState(defaultPriorityRefs);
@@ -302,10 +350,12 @@ function RoadmapStepDraftPanel({ response }: { response: RoadmapsResponse }) {
 	const [error, setError] = useState<string | null>(null);
 	const [draft, setDraft] = useState<RoadmapStepDraftResponse | null>(null);
 
+	const selectedRoadmapCode = selectedRecord?.roadmap.roadmap_code ?? '';
+	// biome-ignore lint/correctness/useExhaustiveDependencies: a change of roadmap resets the choice
 	useEffect(() => {
 		setStepId(defaultStepId);
 		setPriorityRefs(defaultPriorityRefs);
-	}, [defaultStepId, defaultPriorityRefs]);
+	}, [selectedRoadmapCode, defaultStepId, defaultPriorityRefs]);
 
 	// The form edits the selected step: switching roadmap, step or mode reloads its own values.
 	const selectedStepKey = `${selectedRecord?.roadmap.roadmap_code ?? ''}/${mode}/${selectedStep?.id ?? ''}`;
@@ -327,20 +377,19 @@ function RoadmapStepDraftPanel({ response }: { response: RoadmapsResponse }) {
 		setError(null);
 		setDraft(null);
 		try {
-			const result = await api.draftRoadmapStep(targetRoadmapCode, {
-				dry_run: true,
-				mode,
-				step_id: mode === 'update' ? stepId || defaultStepId : undefined,
-				title: title.trim() || undefined,
-				priority_refs: mode === 'create' ? optionalDraftList(priorityRefs) : undefined,
-				...stepDraftChanges(mode, selectedStep, {
-					planRefs,
-					timingFrom,
-					timingTo,
-					timingConfidence,
+			const result = await api.draftRoadmapStep(
+				targetRoadmapCode,
+				stepDraftPayload({
+					mode,
+					steps,
+					stepId,
+					defaultStepId,
+					title,
+					priorityRefs,
+					acceptanceCriteria,
+					form: { planRefs, timingFrom, timingTo, timingConfidence },
 				}),
-				acceptance_criteria: optionalDraftList(acceptanceCriteria),
-			});
+			);
 			setDraft(result);
 		} catch (err) {
 			setError(err instanceof Error ? err.message : String(err));
@@ -400,7 +449,7 @@ function RoadmapStepDraftPanel({ response }: { response: RoadmapsResponse }) {
 						<label htmlFor='roadmap-draft-step'>Roadmap Step</label>
 						<select
 							id='roadmap-draft-step'
-							value={stepId || defaultStepId}
+							value={effectiveStepId}
 							onChange={(event) => setStepId(event.target.value)}
 						>
 							{steps.map((step) => (
