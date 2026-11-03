@@ -10,6 +10,7 @@ import {
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { pathToFileURL } from "node:url";
 import { DATA_REPO_TEMPLATE, SAMPLE_DATA } from "./seed.ts";
 
 /**
@@ -22,7 +23,10 @@ export interface FixtureRepo {
   root: string;
   moduleRoot: string;
   mountRoot: string;
+  /** The bare `origin` as the data checkout names it (a `file://` URL). */
   origin: string;
+  /** The bare `origin` on disk, for Git commands run in it. */
+  originPath: string;
   cleanup(): void;
 }
 
@@ -41,8 +45,13 @@ export function createFixtureRepo(options: { sample?: boolean } = {}): FixtureRe
   // The long, real path: Windows runners hand out an 8.3 short temp path
   // (RUNNER~1) that Git reports in its long form.
   const root = mkdtempSync(join(realpathSync.native(tmpdir()), "mission-control-test-"));
-  const origin = join(root, "origin.git");
-  git(root, ["init", "--quiet", "--bare", "--initial-branch", "v3", origin]);
+  const originPath = join(root, "origin.git");
+  git(root, ["init", "--quiet", "--bare", "--initial-branch", "v3", originPath]);
+  // A `file://` URL, not the path: repository-db recognises a local remote by
+  // `/`, `.` or `file://`, so a Windows path (`C:\\…`) would be taken for a
+  // network remote that needs credentials (Git for Windows configures the
+  // credential manager).
+  const origin = pathToFileURL(originPath).href;
   const moduleRoot = join(root, "module");
   mkdirSync(moduleRoot);
   const mountRoot = join(moduleRoot, "db");
@@ -68,6 +77,7 @@ export function createFixtureRepo(options: { sample?: boolean } = {}): FixtureRe
     moduleRoot,
     mountRoot,
     origin,
+    originPath,
     cleanup: () => rmSync(root, { recursive: true, force: true }),
   };
 }

@@ -52,7 +52,9 @@ describe("start contract", () => {
       } finally {
         server.kill("SIGTERM");
       }
-      expect(await server.exited).toBe(0);
+      const exitCode = await server.exited;
+      // Windows has no SIGTERM; the platform terminates the process instead.
+      if (process.platform !== "win32") expect(exitCode).toBe(0);
     },
     startTimeoutMs + 30_000,
   );

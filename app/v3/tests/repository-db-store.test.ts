@@ -34,10 +34,10 @@ describe("repository-db store", () => {
       expect(card.records?.[0]?.resource.routeTarget?.href).toBe("#/plans/EX-0005");
 
       await store.publish({ expectedRevision: card.revision ?? "", summary: "Plan EX-0005" });
-      const log = git(fixture.origin, ["log", "-1", "--format=%s%n%(trailers:only)", "v3"]);
+      const log = git(fixture.originPath, ["log", "-1", "--format=%s%n%(trailers:only)", "v3"]);
       expect(log).toContain("Plan EX-0005");
       expect(log).toContain("Repository-Db-Source: mission-control-v3");
-      expect(git(fixture.origin, ["rev-list", "--count", "v3"])).toBe("2");
+      expect(git(fixture.originPath, ["rev-list", "--count", "v3"])).toBe("2");
     } finally {
       store.close();
       fixture.cleanup();
@@ -66,7 +66,7 @@ describe("repository-db store", () => {
         code = (error as { code?: string }).code;
       }
       expect(code).toBe("validation_failed");
-      expect(git(fixture.origin, ["rev-list", "--count", "v3"])).toBe("1");
+      expect(git(fixture.originPath, ["rev-list", "--count", "v3"])).toBe("1");
     } finally {
       store.close();
       fixture.cleanup();
