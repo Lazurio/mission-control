@@ -1,3 +1,3 @@
 export const missionControlBrand = {
-	organization: 'Organization',
+  organization: "Organization",
 } as const;
