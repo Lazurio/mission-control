@@ -1,4 +1,4 @@
-import { describe, expect, test } from "bun:test";
+import { describe, expect, setDefaultTimeout, test } from "bun:test";
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { toStableYaml } from "@lazurio/repository-db";
@@ -6,6 +6,11 @@ import { createRepositoryDbStore } from "../src/data/repository-db-store.ts";
 import { storeContract } from "./store-contract.ts";
 import { colleagueClone, createFixtureRepo, git } from "./support/fixture-repo.ts";
 import { newPlan } from "./support/seed.ts";
+
+// These tests run real Git and the data repository's validator for every
+// publish. On a Windows runner one publish takes several seconds, more than
+// bun's default of 5 s per test, so they get a minute.
+setDefaultTimeout(60_000);
 
 storeContract("repository-db", async () => {
   const fixture = createFixtureRepo({ sample: true });
