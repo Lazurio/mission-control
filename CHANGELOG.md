@@ -59,6 +59,11 @@ instruction.
   Marketplace screenshots in `docs/screenshots/`.
 - **License:** still MIT; the copyright holder in `LICENSE` is now "Lazurio
   contributors" (formerly "MissionControlTemplate contributors").
+- **Source:** the repository moved from `Lazurio/mission-control` to
+  `LazurioTemplates/mission-control`, the publisher of the Lazurio Marketplace
+  templates. GitHub redirects the old path for Git and the web, and the tags
+  v3.0.0 to v3.1.0 and their Releases moved with it; a 3.x fork should still
+  point its `upstream` remote to the new path.
 
 ### Removed
 

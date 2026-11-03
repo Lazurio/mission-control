@@ -1,11 +1,12 @@
 # Mission Control: rules for agents
 
 This repository is Mission Control, the public upstream
-`Lazurio/mission-control` and a template of the Lazurio Marketplace (MIT,
-fictional data only). Read [`README.md`](README.md) first. Everything written
-here is English, every change is a worktree, a branch and a pull request, and
-merging is a Publication on the instruction of a maintainer with live GitHub
-rights on this repository.
+`LazurioTemplates/mission-control` (formerly `Lazurio/mission-control`) and a
+template of the Lazurio Marketplace (MIT, fictional data only). Read
+[`README.md`](README.md) first. Everything written here is English, every
+change is a worktree, a branch and a pull request, and merging is a
+Publication on the instruction of a maintainer with live GitHub rights on this
+repository.
 
 An Organization that adopted this template keeps this file and adds its own
 section at the end ("This Organization's copy"): who reviews, where its data

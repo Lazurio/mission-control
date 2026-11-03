@@ -28,7 +28,7 @@ Do all of this live, before showing a plan.
    (`gh api "orgs/<Org>/members?role=admin" --jq '.[].login'`): an issue in
    the Organization's root repository with the plan below, assigned to them.
 2. **The release.** Fetch it and compare it with the brief:
-   `git ls-remote https://github.com/Lazurio/mission-control refs/tags/<tag>`
+   `git ls-remote https://github.com/LazurioTemplates/mission-control refs/tags/<tag>`
    must point to the recorded commit (for an annotated tag, its peeled
    `^{}` line). A mismatch stops the adoption.
 3. **Name collision.** Mission Control's slug is `mission-control`. Look in
@@ -37,7 +37,8 @@ Do all of this live, before showing a plan.
    `<Org>/mission-control-data`.
    - Nothing there: go on with the slug `mission-control`.
    - The Organization already runs Mission Control (a fork of
-     `Lazurio/mission-control` 3.x or an earlier release of this template):
+     `LazurioTemplates/mission-control`, formerly `Lazurio/mission-control`,
+     3.x or an earlier release of this template):
      this is not a new adoption. Take the release into the existing Module as
      an update ([`extending.md`](extending.md), "Taking a template release")
      and tell the person.
@@ -83,7 +84,7 @@ worktree. The root's pull request is the person's to merge.
 In a worktree of the new Module, on a branch:
 
 ```bash
-git fetch https://github.com/Lazurio/mission-control.git "refs/tags/<tag>"
+git fetch https://github.com/LazurioTemplates/mission-control.git "refs/tags/<tag>"
 test "$(git rev-parse 'FETCH_HEAD^{commit}')" = "<commit>"
 git merge --allow-unrelated-histories --no-ff --no-commit <commit>
 ```

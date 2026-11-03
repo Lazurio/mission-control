@@ -38,7 +38,7 @@ squashes. The release that was adopted is an ancestor of the Organization's
 changed and what the template changed.
 
 ```bash
-git fetch https://github.com/Lazurio/mission-control.git "refs/tags/<tag>"
+git fetch https://github.com/LazurioTemplates/mission-control.git "refs/tags/<tag>"
 test "$(git rev-parse 'FETCH_HEAD^{commit}')" = "<commit from the release notes or registry>"
 git switch -c take-<tag> origin/main
 git merge --no-ff <commit>
