@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-## 4.0.0 — proposed, not released
+## 4.0.0 — 2026-11-03
 
 Mission Control becomes the first template of the Lazurio Marketplace: the
 App is rebuilt on the stack profile `app-data@2026.11` and on the
