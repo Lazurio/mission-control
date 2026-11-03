@@ -1,22 +1,28 @@
 # Mission Control: rules for agents
 
-This repository is Mission Control, a public template of the Lazurio
-Marketplace published by Lazurio Example Organization (fictional data only).
-Read [`README.md`](README.md) first. The Organization's root `AGENTS.md`
-(`LazurioExampleOrganization/LazurioExampleOrganization_GEN3`) applies:
-everything written here is English, every change is a worktree, a branch and a
-pull request, and merging is a Publication on the user's instruction.
+This repository is Mission Control, the public upstream
+`Lazurio/mission-control` and a template of the Lazurio Marketplace (MIT,
+fictional data only). Read [`README.md`](README.md) first. Everything written
+here is English, every change is a worktree, a branch and a pull request, and
+merging is a Publication on the instruction of a maintainer with live GitHub
+rights on this repository.
 
 An Organization that adopted this template keeps this file and adds its own
 section at the end ("This Organization's copy"): who reviews, where its data
-lives, what it changed. See [`docs/adoption.md`](docs/adoption.md).
+lives, what it changed. See [`docs/adoption.md`](docs/adoption.md). In that
+copy, review and merge follow the Organization's own `AGENTS.md` and the live
+rights of its people, not this repository's maintainers.
 
 ## What belongs here
 
 - The App code, its Zod schemas, the generated JSON Schemas, the data
   repository template and the documentation.
 - Fictional records only, in `templates/sample-data/` and in tests: no real
-  Organization, person, plan, credential or private link. Fictional people
+  Organization, person, plan, credential, secret, local host path or private
+  link. The Organization identity in `lazurio.module.json`,
+  `app/v3/package.json`, `app/v3/config/data-repository.json` and
+  `app/v3/src/instance/brand.ts` stays the visibly generic placeholders
+  (`REPLACE-WITH-ORG-NAME`, `Organization`). Fictional people
   have international names without diacritics (`alexmorgan`).
 - An Organization's real plans live in its own data repository
   (`<Organization>/mission-control-data`, branch `v3`, mounted as `db/`),

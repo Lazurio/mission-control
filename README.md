@@ -3,8 +3,8 @@
 Plans and roadmaps of a Lazurio Organization, with a reviewed Draft & Publish
 flow. Mission Control is a Module of the
 [Lazurio Module Standard](https://github.com/Lazurio/LazurioPlatform/blob/main/docs/module-standard.md)
-and a template of the Lazurio Marketplace, published by the fictional
-Lazurio Example Organization under the MIT license.
+and a template of the Lazurio Marketplace, published by Lazurio as the public
+upstream `Lazurio/mission-control` under the MIT license.
 
 ![The overview: plans by state, the main roadmap and its next steps](docs/screenshots/mission-control-overview.webp)
 

@@ -56,20 +56,19 @@ from ([`adoption.md`](adoption.md)):
 `templates/sample-data/` holds fictional example records (four plans, one main
 roadmap) for the "example plans" start and for `bun run dev:demo`.
 
-## Relation to `LazurioExampleOrganization/mission-control-data`
+## Data repositories of other Organizations
 
-`LazurioExampleOrganization/mission-control-data` (branch `v3`) is the data
-repository of the Example Organization's own running Mission Control: its
-fictional plans, task ledgers and history. It is **not** part of the template
-and adoption never copies it:
+Adoption never copies another Organization's data repository, not even the
+fictional one of an example Organization:
 
 - a release pins code and its seeds in one commit (`templates/`), so an
   Organization gets exactly the records that release was tested with, while
-  the Example Organization's data keeps changing on its own;
-- copying that repository would carry the Example Organization's history,
-  ledgers and identities into another Organization.
+  another Organization's data keeps changing on its own;
+- copying a data repository would carry that Organization's history, ledgers
+  and identities into another Organization.
 
-The Example Organization's data repository validates against these schemas
+A data repository of a 3.x Mission Control validates against these schemas
 unchanged (`bun run validate` over a checkout of it). Moving it to the
 generated schemas and `bun scripts/validate.ts` is a separate pull request in
-that repository, after this release; until then its own validator stays.
+that repository, after the Organization takes 4.0.0; until then its own
+validator stays.

@@ -57,6 +57,8 @@ instruction.
 - `bun run dev:demo` serves the fictional example records from memory.
 - Documents: `docs/adoption.md`, `docs/extending.md`, `docs/data.md`, and
   Marketplace screenshots in `docs/screenshots/`.
+- **License:** still MIT; the copyright holder in `LICENSE` is now "Lazurio
+  contributors" (formerly "MissionControlTemplate contributors").
 
 ### Removed
 
@@ -75,6 +77,16 @@ migration; replacing its validator with the generated schemas and
 `bun scripts/validate.ts` is optional and can follow later. Pending local
 changesets of the old publish flow must be published or dropped before the
 merge: 4.0.0 does not read them.
+
+Before the merge, check that every Environment of the Organization runs a
+LazurioPlatform release that knows `start_script` and `build_output` (v0.1.11
+or newer): an older release refuses the unknown keys and does not start the
+App. The Organization's identity (`lazurio.module.json`, the `lazurio.runtime`
+ids, `app/v3/config/data-repository.json`, `app/v3/src/instance/`, its
+`AGENTS.md` section) stays its own while the rest takes the template's side.
+After the merge, `app/v3` is the only App package; the root `package.json`,
+`bun.lock`, `config/`, `schemas/`, `src/`, `scripts/`, `test-support/` and
+`mission-control/` of 3.x are gone.
 
 ## 3.1.0 — 2026-11-01
 
