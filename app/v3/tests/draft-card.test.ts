@@ -175,28 +175,37 @@ describe("the Draft & Publish card", () => {
     const plan = await store.getPlan("EX-0002");
     if (!plan) throw new Error("EX-0002 missing");
     await store.savePlan(
-      { ...plan.value, priority_rank: 21, scope: { ...plan.value.scope, out: [] } },
+      {
+        ...plan.value,
+        priority_rank: 21,
+        status: "review",
+        updated_at: "2026-11-06",
+        scope: { ...plan.value.scope, out: [] },
+      },
       plan.revision,
     );
-    const english = (await store.draft("en")).records?.[0]?.resource;
-    const czech = (await store.draft("cs")).records?.[0]?.resource;
-    expect(english?.metadata?.typeLabel).toBe("Plan");
-    expect(english?.changes[0]?.summary).toBe("Fields changed: 2");
-    expect(
-      english?.changes[0]?.fields.map((field) => [
+    const rows = async (locale: "cs" | "en") =>
+      (await store.draft(locale)).records?.[0]?.resource.changes[0]?.fields.map((field) => [
         field.label,
         field.beforeSummary,
         field.afterSummary,
-      ]),
-    ).toEqual([
+      ]);
+    const english = (await store.draft("en")).records?.[0]?.resource;
+    expect(english?.metadata?.typeLabel).toBe("Plan");
+    expect(english?.changes[0]?.summary).toBe("Fields changed: 4");
+    // States and priorities by their names, dates in the page's language.
+    expect(await rows("en")).toEqual([
       ["Rank", "20", "21"],
       ["Scope: out", "1 item", "0 items"],
+      ["State", "In progress", "In review"],
+      ["Updated", "28 Oct 2026", "6 Nov 2026"],
     ]);
-    expect(czech?.metadata?.typeLabel).toBe("Plán");
-    expect(czech?.changes[0]?.fields.map((field) => field.label)).toEqual([
-      "Pořadí",
-      "Rozsah: nepatří do něj",
+    expect((await store.draft("cs")).records?.[0]?.resource.metadata?.typeLabel).toBe("Plán");
+    expect(await rows("cs")).toEqual([
+      ["Pořadí", "20", "21"],
+      ["Rozsah: nepatří do něj", "1 položka", "0 položek"],
+      ["Stav", "Rozpracováno", "Kontrola"],
+      ["Upraveno", "28. 10. 2026", "6. 11. 2026"],
     ]);
-    expect(czech?.changes[0]?.fields[1]?.beforeSummary).toBe("1 položka");
   });
 });

@@ -115,6 +115,10 @@ h3 {
 }
 
 .content-area {
+  min-width: 0;
+  /* A long name without spaces (a Czech compound, an address) wraps instead
+     of widening the page. */
+  overflow-wrap: anywhere;
   position: relative;
   isolation: isolate;
   min-width: 0;
@@ -126,6 +130,8 @@ h3 {
 }
 
 .page-title {
+  text-wrap: balance;
+  hyphens: auto;
   font-size: 1.75rem;
   font-weight: 650;
   letter-spacing: -0.01em;
@@ -600,6 +606,7 @@ textarea {
 
 .intro-item {
   display: grid;
+  align-content: start;
   gap: 0.2rem;
   min-width: 0;
   padding-left: 0.75rem;
@@ -650,7 +657,8 @@ textarea {
   overflow-x: auto;
 }
 
-.nowrap {
+.nowrap,
+.table .code {
   white-space: nowrap;
 }
 
@@ -837,7 +845,11 @@ textarea {
 
 @media (max-width: 900px) {
   .shell {
-    grid-template-columns: 1fr;
+    /* minmax(0, …): the navigation scrolls instead of widening the page;
+       the content row takes the free height of a short page, not the
+       navigation. */
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto 1fr;
   }
 
   .sidebar {
@@ -847,7 +859,13 @@ textarea {
 
   .sidebar-items {
     grid-auto-flow: column;
+    grid-auto-columns: max-content;
     overflow-x: auto;
+    overscroll-behavior-x: contain;
+  }
+
+  .sidebar-item {
+    white-space: nowrap;
   }
 
   .plan-grid,

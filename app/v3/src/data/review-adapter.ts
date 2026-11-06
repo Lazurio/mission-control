@@ -7,6 +7,7 @@ import {
   type ReviewSurfaceAdapter,
   structuralDiff,
 } from "@lazurio/repository-db";
+import { formatDate } from "../i18n/format.ts";
 import { DEFAULT_LOCALE, type Locale } from "../i18n/locale.ts";
 import { type Messages, messagesFor } from "../i18n/messages.ts";
 
@@ -40,12 +41,28 @@ function valueAt(document: unknown, pointer: string): unknown {
   return current;
 }
 
-function summarize(messages: Messages, value: unknown): string | undefined {
+/** A changed value as a person reads it: a state or priority by its name, a date in their language. */
+function summarize(
+  locale: Locale,
+  messages: Messages,
+  pointer: string,
+  value: unknown,
+): string | undefined {
   if (value === undefined) return undefined;
   if (value === null) return "—";
   if (Array.isArray(value)) return messages.review.items(value.length);
   if (typeof value === "object") return messages.review.fields(Object.keys(value).length);
   if (typeof value === "boolean") return value ? messages.review.yes : messages.review.no;
+  if (typeof value === "string") {
+    const named =
+      pointer === "/status"
+        ? (messages.status as Record<string, string>)[value]
+        : pointer === "/priority"
+          ? (messages.priority as Record<string, string>)[value]
+          : undefined;
+    if (named) return named;
+    if (/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(value)) return formatDate(locale, value);
+  }
   const text = String(value);
   return text.length > 120 ? `${text.slice(0, 119)}…` : text;
 }
@@ -77,8 +94,8 @@ export function changedFields(
     fields: diff.fields.map((field) => ({
       ...field,
       label: fieldLabel(messages, field.fieldPath, field.label),
-      beforeSummary: summarize(messages, valueAt(left, field.fieldPath)),
-      afterSummary: summarize(messages, valueAt(right, field.fieldPath)),
+      beforeSummary: summarize(locale, messages, field.fieldPath, valueAt(left, field.fieldPath)),
+      afterSummary: summarize(locale, messages, field.fieldPath, valueAt(right, field.fieldPath)),
     })),
     truncated: diff.truncated,
   };
